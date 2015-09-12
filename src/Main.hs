@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
@@ -16,6 +17,7 @@ import Control.Monad
 import Data
 import PhotoStore
 import Control.Monad.IO.Class
+import Control.Monad.Trans.Either
 
 defineFlag "port" (8081 :: Int) "Port to serve on"
 defineFlag "host" ("*6" :: String)  "Host to serve on (*6 for ipv6 mode)"
@@ -24,8 +26,18 @@ defineFlag "photos_path" ("" :: String) "Path to permanent albums"
 $(return [])
 
 instance ToJSON Album
+instance FromJSON Album
 
-type PhotoApi = "albums" :> Get '[JSON] [Album]
+data RenameRequest = RenameRequest
+  { from :: Album
+  , to :: Album
+  } deriving (Eq, Show, Generic)
+instance FromJSON RenameRequest
+instance ToJSON RenameError
+
+type PhotoApi =
+       "albums" :> Get '[JSON] [Album]
+  :<|> "rename" :> ReqBody '[JSON] RenameRequest :> Post '[JSON] (Either RenameError ())
 
 config = Config 
   { pendingPath = flags_pending_path
@@ -33,7 +45,14 @@ config = Config
   }
 
 server :: Server PhotoApi
-server = liftIO (getAlbums config)
+server = albums
+    :<|> rename
+
+  where albums = liftIO (getAlbums config)
+
+        rename :: RenameRequest -> EitherT ServantErr IO (Either RenameError ())
+        rename (RenameRequest from to) = liftIO $
+          runEitherT (renameAlbum config from to)
 
 photoApi :: Proxy PhotoApi
 photoApi = Proxy

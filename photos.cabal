@@ -29,3 +29,5 @@ executable photos
     , hflags
     , directory
     , transformers
+    , filepath
+    , either

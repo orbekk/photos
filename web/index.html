@@ -15,7 +15,13 @@
       }
       var element = makeElement(albumName);
       $(element).find('a').click(function() {
-        $(this).replaceWith($('<input type="text" autofocus="true">'));
+        var input =
+          $('<input type="text" value="'+albumName+'" autofocus="true">');
+        setTimeout(function() {
+          var position = input[0].value.length;
+          input[0].setSelectionRange(position, position);
+        }, 0);
+        $(this).replaceWith(input);
       });
       $('#pending-container').append(element);
     }
@@ -53,6 +59,20 @@
     }
     $(document).ready(function() {
       fetchAlbums();
+
+      var request = {
+          from: { name: 'x', pending: true },
+          to: { name: 'y', pending: false }
+        };
+      console.log('rename request: ', request);
+      $.ajax({
+        url: '/api/rename',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(request),
+        success: function(data) { console.log('Rename succes: ', data); },
+        error: function(unused, unusedStatus, error) { console.log('Rename failure: ' + error); }
+      });
     });
   </script>
 </head>
