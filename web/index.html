@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link href='https://fonts.googleapis.com/css?family=Noto+Sans' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="style.css">
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+  <script>
+    function addPending(albumName) {
+      function makeElement(name) {
+        return $('<li>' + name + ' (<a href="javascript:void(0)">edit</a>)</li>');
+      }
+      var element = makeElement(albumName);
+      $(element).find('a').click(function() {
+        $(this).replaceWith($('<input type="text" autofocus="true">'));
+      });
+      $('#pending-container').append(element);
+    }
+    function addPermanentAlbum(albumName) {
+      function makeElement(name) {
+        return $('<li>' + name + '</li>');
+      }
+      $('#album-container').append(makeElement(albumName));
+    }
+
+    function fetchAlbums() {
+      $.ajax({
+        url: "/api/albums",
+        success: function(data) {
+          $('#pending-error').empty();
+          $('#pending-container').empty();
+          $('#album-container').empty();
+          console.log('Got albums:');
+          console.log(data);
+          data.forEach(function (album) {
+            if (album.pending) {
+              addPending(album.name, album.pending);
+            } else {
+              addPermanentAlbum(album.name);
+            }
+            console.log('Added album ' + album.name);
+          });
+        },
+        error: function(unused, unusedStatus, error) {
+          $('#pending-container').empty();
+          $('#pending-error').html(
+              '<p><b>Error</b> fetching pending albums: ' + error);
+        }
+      });
+    }
+    $(document).ready(function() {
+      fetchAlbums();
+    });
+  </script>
+</head>
+<body>
+  <h1>Pending Photos</h1>
+  <span id="pending-error"></span>
+  <ul id="pending-container"></ul>
+
+  <h1>Albums</h1>
+  <ul id="album-container"></ul>
+</body>
+</html>
