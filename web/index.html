@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="google-signin-scope" content="profile email">
+  <meta name="google-signin-client_id" content="962011751339-3gia1j74sqhu1ju40o0scbnfsf39llja.apps.googleusercontent.com">
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
   <!--[if lt IE 9]>
     <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
@@ -21,10 +24,17 @@
           var position = input[0].value.length;
           input[0].setSelectionRange(position, position);
         }, 0);
+        $(input).keypress(function(e) {
+          if (e.which == 13) {
+            $(input).replaceWith($('<i>renaming...</i>'));
+            renamePending(albumName, input[0].value);
+          }
+        });
         $(this).replaceWith(input);
       });
       $('#pending-container').append(element);
     }
+
     function addPermanentAlbum(albumName) {
       function makeElement(name) {
         return $('<li>' + name + '</li>');
@@ -57,26 +67,59 @@
         }
       });
     }
-    $(document).ready(function() {
-      fetchAlbums();
 
+    function showError(error) {
+      $('#generic-error').html(
+          '<p>' + error + '</p>');
+    }
+
+    function renamePending(oldName, newName) {
       var request = {
-          from: { name: 'x', pending: true },
-          to: { name: 'y', pending: false }
-        };
-      console.log('rename request: ', request);
+        from: { name: oldName, pending: true },
+        to: { name: newName, pending: false }
+      };
       $.ajax({
         url: '/api/rename',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(request),
-        success: function(data) { console.log('Rename succes: ', data); },
-        error: function(unused, unusedStatus, error) { console.log('Rename failure: ' + error); }
+        success: function(data) {
+          if ('Left' in data) {
+            showError('Error renaming ' + oldName + ' to ' + newName + ': ' +
+                data.Left);
+          }
+          fetchAlbums();
+        }
       });
+    }
+
+    function onSignIn(googleUser) {
+      // Useful data for your client-side scripts:
+      var profile = googleUser.getBasicProfile();
+      console.log("ID: " + profile.getId()); // Don't send this directly to your server!
+      console.log("Name: " + profile.getName());
+      console.log("Image URL: " + profile.getImageUrl());
+      console.log("Email: " + profile.getEmail());
+
+      // The ID token you need to pass to your backend:
+      var id_token = googleUser.getAuthResponse().id_token;
+      console.log("ID Token: " + id_token);
+      $('.g-signin2').remove();
+    };
+
+    $(document).ready(function() {
+      fetchAlbums();
+      var request = {
+          from: { name: 'x', pending: true },
+          to: { name: 'y', pending: false }
+        };
     });
   </script>
 </head>
 <body>
+  <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+  <span align="center" id="generic-error"></span>
+
   <h1>Pending Photos</h1>
   <span id="pending-error"></span>
   <ul id="pending-container"></ul>
