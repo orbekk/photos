@@ -20,10 +20,10 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
 
 defineFlag "port" (8081 :: Int) "Port to serve on"
-defineFlag "host" ("*6" :: String)  "Host to serve on (*6 for ipv6 mode)"
+defineFlag "host" ("*6" :: String) "Host to serve on (*6 for ipv6 mode)"
 defineFlag "pending_path" ("" :: String) "Path to pending albums"
 defineFlag "photos_path" ("" :: String) "Path to permanent albums"
-$(return [])
+$(return [])  -- Somehow forces the flags to be set.
 
 instance ToJSON Album
 instance FromJSON Album
@@ -38,6 +38,8 @@ instance ToJSON RenameError
 type PhotoApi =
        "albums" :> Get '[JSON] [Album]
   :<|> "rename" :> ReqBody '[JSON] RenameRequest :> Post '[JSON] (Either RenameError ())
+  :<|> "test"   :> Header "X-Token" String :> Get '[JSON] ()
+-- Introduce request header containing auth information.
 
 config = Config 
   { pendingPath = flags_pending_path
@@ -47,12 +49,15 @@ config = Config
 server :: Server PhotoApi
 server = albums
     :<|> rename
+    :<|> test
 
   where albums = liftIO (getAlbums config)
 
         rename :: RenameRequest -> EitherT ServantErr IO (Either RenameError ())
         rename (RenameRequest from to) = liftIO $
           runEitherT (renameAlbum config from to)
+
+        test token = return ()
 
 photoApi :: Proxy PhotoApi
 photoApi = Proxy

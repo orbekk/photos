@@ -109,10 +109,17 @@
 
     $(document).ready(function() {
       fetchAlbums();
-      var request = {
-          from: { name: 'x', pending: true },
-          to: { name: 'y', pending: false }
-        };
+      $.ajax({
+        url: '/api/test',
+        type: 'GET',
+        headers: {"X-Token": "foo"},
+        success: function(data) {
+          console.log("Success. got response " + data);
+        },
+        error: function(data) {
+          console.log("Success. got response " + data);
+        }
+      });
     });
   </script>
 </head>
