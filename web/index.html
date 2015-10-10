@@ -107,10 +107,7 @@
       $('.g-signin2').remove();
       $.ajax({
         url: '/api/test',
-        headers: {'X-Token:': id_token},
-        beforeSend: function(request) {
-          request.setRequestHeader('Token', id_token);
-        },
+        headers: {'X-Token': id_token},
         success: function(data) {
           console.log('Success:', data);
         },
@@ -119,21 +116,6 @@
         }
       });
     };
-
-    // $(document).ready(function() {
-    //   fetchAlbums();
-    //   $.ajax({
-    //     url: '/api/test',
-    //     type: 'GET',
-    //     headers: {"X-Token": "foo"},
-    //     success: function(data) {
-    //       console.log("Success. got response " + data);
-    //     },
-    //     error: function(data) {
-    //       console.log("Success. got response " + data);
-    //     }
-    //   });
-    // });
   </script>
 </head>
 <body>
