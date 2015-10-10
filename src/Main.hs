@@ -18,6 +18,7 @@ import Data
 import PhotoStore
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
+import Network.Wai.Middleware.RequestLogger
 
 defineFlag "port" (8081 :: Int) "Port to serve on"
 defineFlag "host" ("*6" :: String) "Host to serve on (*6 for ipv6 mode)"
@@ -63,7 +64,7 @@ photoApi :: Proxy PhotoApi
 photoApi = Proxy
 
 app :: Application
-app = serve photoApi server
+app = logStdoutDev $ serve photoApi server
 
 port = 8081
 settings :: Settings

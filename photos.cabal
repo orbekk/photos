@@ -26,6 +26,7 @@ executable photos
     , aeson
     , warp
     , wai
+    , wai-extra
     , hflags
     , directory
     , transformers
