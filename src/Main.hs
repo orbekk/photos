@@ -58,7 +58,8 @@ server = albums
         rename (RenameRequest from to) = liftIO $
           runEitherT (renameAlbum config from to)
 
-        test token = return ()
+        test (Just token) = liftIO (putStrLn $ "Got token: " ++ token)
+        test _ = left err503 { errBody = "Not authenticated" }
 
 photoApi :: Proxy PhotoApi
 photoApi = Proxy

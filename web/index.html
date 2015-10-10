@@ -105,22 +105,35 @@
       var id_token = googleUser.getAuthResponse().id_token;
       console.log("ID Token: " + id_token);
       $('.g-signin2').remove();
-    };
-
-    $(document).ready(function() {
-      fetchAlbums();
       $.ajax({
         url: '/api/test',
-        type: 'GET',
-        headers: {"X-Token": "foo"},
+        headers: {'X-Token:': id_token},
+        beforeSend: function(request) {
+          request.setRequestHeader('Token', id_token);
+        },
         success: function(data) {
-          console.log("Success. got response " + data);
+          console.log('Success:', data);
         },
         error: function(data) {
-          console.log("Success. got response " + data);
+          console.log('Failure:', data);
         }
       });
-    });
+    };
+
+    // $(document).ready(function() {
+    //   fetchAlbums();
+    //   $.ajax({
+    //     url: '/api/test',
+    //     type: 'GET',
+    //     headers: {"X-Token": "foo"},
+    //     success: function(data) {
+    //       console.log("Success. got response " + data);
+    //     },
+    //     error: function(data) {
+    //       console.log("Success. got response " + data);
+    //     }
+    //   });
+    // });
   </script>
 </head>
 <body>
