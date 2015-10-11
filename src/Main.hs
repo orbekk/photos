@@ -14,11 +14,13 @@ import Servant
 import HFlags
 import System.Exit
 import Control.Monad
-import Data
-import PhotoStore
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
 import Network.Wai.Middleware.RequestLogger
+
+import Authentication
+import Data
+import PhotoStore
 
 defineFlag "port" (8081 :: Int) "Port to serve on"
 defineFlag "host" ("*6" :: String) "Host to serve on (*6 for ipv6 mode)"
@@ -42,7 +44,7 @@ type PhotoApi =
   :<|> "test"   :> Header "X-Token" String :> Get '[JSON] ()
 -- Introduce request header containing auth information.
 
-config = Config 
+config = Config
   { pendingPath = flags_pending_path
   , photosPath = flags_photos_path
   }
@@ -51,7 +53,6 @@ server :: Server PhotoApi
 server = albums
     :<|> rename
     :<|> test
-
   where albums = liftIO (getAlbums config)
 
         rename :: RenameRequest -> EitherT ServantErr IO (Either RenameError ())
