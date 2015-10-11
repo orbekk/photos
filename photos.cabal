@@ -21,16 +21,18 @@ executable photos
   default-language:    Haskell2010
   build-depends:
       base >= 4.7 && < 5
-    , servant
-    , bytestring
-    , servant-server
     , aeson
-    , warp
+    , bytestring
+    , directory
+    , either
+    , extra
+    , filepath
+    , hflags
+    , http-conduit
+    , mtl
+    , servant
+    , servant-server
+    , transformers
     , wai
     , wai-extra
-    , hflags
-    , directory
-    , transformers
-    , filepath
-    , either
-    , http-conduit
+    , warp
