@@ -36,15 +36,18 @@ queryUser' token = do
   response <- simpleHttp (makeUrl token)
   return (decode response)
 
-isAuthenticated :: [[String]] -> MVar [Token] -> Token -> IO Bool
-isAuthenticated allowedUsers tokenCache token = runEitherT f >>= return . fromEither
-    where f :: EitherT Bool IO Bool
-          f = do
+isAuthenticated :: [String] -> MVar [Token] -> Token -> IO Bool
+isAuthenticated allowedUsers tokenCache token = runEitherT runner >>= return . fromEither
+    where runner :: EitherT Bool IO Bool
+          runner = do
             ts <- lift $ readMVar tokenCache
-            _ <- test (token `elem` ts)
+            _ <- leftIf (token `elem` ts) True
             user <- lift $ queryUser token
-            return False
+            email' <- return $ fromMaybe "" (user >>= return . email)
+            _ <- leftIf (not (email' `elem` allowedUsers)) False
+            tokens <- lift $ takeMVar tokenCache
+            lift $ putMVar tokenCache (token:tokens)
+            return True
 
-          test False = return ()
-          test True = left True
-
+          leftIf True x = left x
+          leftIf False x = right x
