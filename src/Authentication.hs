@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Authentication (User, queryUser) where
+module Authentication (User, queryUser, isAuthenticated) where
 
 import Data.Aeson
 import Data.Maybe

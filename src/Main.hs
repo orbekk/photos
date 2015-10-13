@@ -6,19 +6,21 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
-import Data.Aeson
-import GHC.Generics
-import Network.Wai
-import Network.Wai.Handler.Warp
-import Servant
-import HFlags
-import System.Exit
+import Control.Concurrent.MVar
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
+import Data.Aeson
+import GHC.Generics
+import HFlags
+import Network.Wai
+import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.RequestLogger
+import Servant
+import System.Exit
+import System.IO.Unsafe (unsafePerformIO)
 
-import Authentication
+import qualified Authentication
 import Data
 import PhotoStore
 
@@ -26,6 +28,7 @@ defineFlag "port" (8081 :: Int) "Port to serve on"
 defineFlag "host" ("*6" :: String) "Host to serve on (*6 for ipv6 mode)"
 defineFlag "pending_path" ("" :: String) "Path to pending albums"
 defineFlag "photos_path" ("" :: String) "Path to permanent albums"
+defineFlag "allowed_users" ("" :: String) "Comma separated list of emails"
 $(return [])  -- Somehow forces the flags to be set.
 
 instance ToJSON Album
@@ -44,6 +47,10 @@ type PhotoApi =
   :<|> "test"   :> Header "X-Token" String :> Get '[JSON] ()
 -- Introduce request header containing auth information.
 
+isAuthenticated = Authentication.isAuthenticated users cache
+    where users = ["kjetil.orbekk@gmail.com"]
+          cache = unsafePerformIO (newMVar [])
+
 config = Config
   { pendingPath = flags_pending_path
   , photosPath = flags_photos_path
@@ -59,7 +66,7 @@ server = albums
         rename (RenameRequest from to) = liftIO $
           runEitherT (renameAlbum config from to)
 
-        test (Just token) = liftIO (putStrLn $ "Got token: " ++ token)
+        test (Just token) = liftIO (putStrLn $ "Is authenticated" ++ token)
         test _ = left err503 { errBody = "Not authenticated" }
 
 photoApi :: Proxy PhotoApi
