@@ -12,6 +12,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
 import Data.Aeson
+import Data.List.Split (splitOn)
 import GHC.Generics
 import HFlags
 import Network.Wai
@@ -19,8 +20,8 @@ import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.RequestLogger
 import Servant
 import System.Exit
+import System.IO
 import System.IO.Unsafe (unsafePerformIO)
-import Data.List.Split (splitOn)
 
 import qualified Authentication
 import Data
@@ -86,6 +87,8 @@ app = logStdoutDev $ serve photoApi server
 port = 8081
 settings = setHost "*6" . setPort 8081 $ defaultSettings
 main = do
+  hSetBuffering stdout LineBuffering
+  hSetBuffering stderr LineBuffering
   $initHFlags "photos"
   print $ splitOn "," flags_allowed_users
   when (flags_pending_path == "") (die "--pending_path must be specified")
