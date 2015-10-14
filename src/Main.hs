@@ -43,11 +43,15 @@ data RenameRequest = RenameRequest
 instance FromJSON RenameRequest
 instance ToJSON RenameError
 
+type WithAuthentication = Header "X-Token" String
 type PhotoApi =
-       "albums" :> Get '[JSON] [Album]
-  :<|> "rename" :> ReqBody '[JSON] RenameRequest :> Post '[JSON] (Either RenameError ())
-  :<|> "test"   :> Header "X-Token" String :> Get '[JSON] String
--- Introduce request header containing auth information.
+       "albums"
+           :> WithAuthentication
+           :> Get '[JSON] [Album]
+  :<|> "rename"
+           :> WithAuthentication
+           :> ReqBody '[JSON] RenameRequest
+           :> Post '[JSON] (Either RenameError ())
 
 type Token = String
 
@@ -60,24 +64,20 @@ config = Config
   , photosPath = flags_photos_path
   }
 
-whenAuthenticated :: Maybe Token -> EitherT ServantErr IO a -> EitherT ServantErr IO a
-whenAuthenticated (Just token) action = liftIO (isAuthenticated token) >>= \case
-  True -> action
+checkAuthenticated :: Maybe Token -> EitherT ServantErr IO ()
+checkAuthenticated (Just token) = liftIO (isAuthenticated token) >>= \case
+  True  -> return ()
   False -> left err503 { errBody = "Not authenticated" }
-whenAuthenticated Nothing _ = left err503 { errBody = "Missing token" }
+checkAuthenticated Nothing = left err503 { errBody = "Missing token" }
 
 server :: Server PhotoApi
 server = albums
     :<|> rename
-    :<|> test
-  where albums = liftIO (getAlbums config)
+  where albums token = checkAuthenticated token >> liftIO (getAlbums config)
 
-        rename :: RenameRequest -> EitherT ServantErr IO (Either RenameError ())
-        rename (RenameRequest from to) = liftIO $
-          runEitherT (renameAlbum config from to)
-
-        test = (`whenAuthenticated` test')
-        test' = return "Yay"
+        rename token (RenameRequest from to) = do
+          _ <- checkAuthenticated token
+          liftIO $ runEitherT (renameAlbum config from to)
 
 photoApi :: Proxy PhotoApi
 photoApi = Proxy

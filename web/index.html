@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="style.css">
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
   <script>
+    var authentication_token = null;
+
     function addPending(albumName) {
       function makeElement(name) {
         return $('<li>' + name + ' (<a href="javascript:void(0)">edit</a>)</li>');
@@ -45,6 +47,7 @@
     function fetchAlbums() {
       $.ajax({
         url: "/api/albums",
+        headers: {'X-Token': authentication_token},
         success: function(data) {
           $('#pending-error').empty();
           $('#pending-container').empty();
@@ -80,6 +83,7 @@
       };
       $.ajax({
         url: '/api/rename',
+        headers: {'X-Token': authentication_token},
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(request),
@@ -100,21 +104,12 @@
       console.log("Name: " + profile.getName());
       console.log("Image URL: " + profile.getImageUrl());
       console.log("Email: " + profile.getEmail());
-
+      authentication_token = googleUser.getAuthResponse().id_token;
       // The ID token you need to pass to your backend:
       var id_token = googleUser.getAuthResponse().id_token;
       console.log("ID Token: " + id_token);
       $('.g-signin2').remove();
-      $.ajax({
-        url: '/api/test',
-        headers: {'X-Token': id_token},
-        success: function(data) {
-          console.log('Success:', data);
-        },
-        error: function(data) {
-          console.log('Failure:', data);
-        }
-      });
+      fetchAlbums();
     };
   </script>
 </head>
