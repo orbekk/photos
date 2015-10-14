@@ -32,6 +32,7 @@ executable photos
     , mtl
     , servant
     , servant-server
+    , split
     , transformers
     , wai
     , wai-extra

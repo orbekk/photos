@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -19,6 +20,7 @@ import Network.Wai.Middleware.RequestLogger
 import Servant
 import System.Exit
 import System.IO.Unsafe (unsafePerformIO)
+import Data.List.Split
 
 import qualified Authentication
 import Data
@@ -44,17 +46,25 @@ instance ToJSON RenameError
 type PhotoApi =
        "albums" :> Get '[JSON] [Album]
   :<|> "rename" :> ReqBody '[JSON] RenameRequest :> Post '[JSON] (Either RenameError ())
-  :<|> "test"   :> Header "X-Token" String :> Get '[JSON] ()
+  :<|> "test"   :> Header "X-Token" String :> Get '[JSON] String
 -- Introduce request header containing auth information.
 
+type Token = String
+
 isAuthenticated = Authentication.isAuthenticated users cache
-    where users = ["kjetil.orbekk@gmail.com"]
+    where users = splitOn "," flags_allowed_users
           cache = unsafePerformIO (newMVar [])
 
 config = Config
   { pendingPath = flags_pending_path
   , photosPath = flags_photos_path
   }
+
+whenAuthenticated :: Maybe Token -> EitherT ServantErr IO a -> EitherT ServantErr IO a
+whenAuthenticated (Just token) action = liftIO (isAuthenticated token) >>= \case
+  True -> action
+  False -> left err503 { errBody = "Not authenticated" }
+whenAuthenticated Nothing _ = left err503 { errBody = "Missing token" }
 
 server :: Server PhotoApi
 server = albums
@@ -66,8 +76,8 @@ server = albums
         rename (RenameRequest from to) = liftIO $
           runEitherT (renameAlbum config from to)
 
-        test (Just token) = liftIO (putStrLn $ "Is authenticated" ++ token)
-        test _ = left err503 { errBody = "Not authenticated" }
+        test = (`whenAuthenticated` test')
+        test' = return "Yay"
 
 photoApi :: Proxy PhotoApi
 photoApi = Proxy
@@ -82,6 +92,7 @@ settings = setHost "*6" . setPort 8081 $ defaultSettings
 main :: IO ()
 main = do
   $initHFlags "photos"
+  print $ splitOn "," flags_allowed_users
   when (flags_pending_path == "") (die "--pending_path must be specified")
   when (flags_photos_path == "") (die "--photos_path must be specified")
   putStrLn $ "Starting server on port: " ++ (show port)
