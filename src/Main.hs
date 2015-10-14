@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Main where
+module Main (main) where
 
 import Control.Concurrent.MVar
 import Control.Monad
@@ -20,7 +20,7 @@ import Network.Wai.Middleware.RequestLogger
 import Servant
 import System.Exit
 import System.IO.Unsafe (unsafePerformIO)
-import Data.List.Split
+import Data.List.Split (splitOn)
 
 import qualified Authentication
 import Data
@@ -43,13 +43,13 @@ data RenameRequest = RenameRequest
 instance FromJSON RenameRequest
 instance ToJSON RenameError
 
-type WithAuthentication = Header "X-Token" String
+type AuthenticationHeader = Header "X-Token" String
 type PhotoApi =
        "albums"
-           :> WithAuthentication
+           :> AuthenticationHeader
            :> Get '[JSON] [Album]
   :<|> "rename"
-           :> WithAuthentication
+           :> AuthenticationHeader
            :> ReqBody '[JSON] RenameRequest
            :> Post '[JSON] (Either RenameError ())
 
@@ -81,15 +81,10 @@ server = albums
 
 photoApi :: Proxy PhotoApi
 photoApi = Proxy
-
-app :: Application
 app = logStdoutDev $ serve photoApi server
 
 port = 8081
-settings :: Settings
 settings = setHost "*6" . setPort 8081 $ defaultSettings
-
-main :: IO ()
 main = do
   $initHFlags "photos"
   print $ splitOn "," flags_allowed_users
