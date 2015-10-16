@@ -24,9 +24,7 @@ data Config = Config
 getDirectoryFiles path = getDirectoryContents path >>= return . filter f
   where f filename = not (filename `elem` [".", ".."])
 
-validAlbumName name =
-     name /= "."
-  && name /= ".."
+validAlbumName name = not ("." `isPrefixOf` name)
 
 getAlbums :: Config -> IO [Album]
 getAlbums config = do
