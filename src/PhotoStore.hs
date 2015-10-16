@@ -3,18 +3,18 @@
 {-# LANGUAGE LambdaCase #-}
 module PhotoStore where
 
+import Control.Exception
 import Control.Exception.Base
-import Data
+import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Either
+import Data
+import Data.List
 import GHC.Generics
+import Prelude
 import System.Directory
 import System.FilePath
-import Prelude
-import Control.Monad
-import Control.Exception
 import System.IO.Error
-import Data.List
 
 data Config = Config
   { pendingPath :: String
@@ -32,8 +32,8 @@ getAlbums :: Config -> IO [Album]
 getAlbums config = do
   pending <- getDirectoryFiles (pendingPath config)
   permanent <- getDirectoryFiles (photosPath config)
-  return ([Album name True | name <- pending] ++
-          [Album name False | name <- permanent])
+  return ([Album name True | name <- sort pending] ++
+          [Album name False | name <- sort permanent])
 
 albumDirectory :: Config -> Album -> FilePath
 albumDirectory config album
