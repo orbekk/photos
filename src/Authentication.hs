@@ -23,8 +23,8 @@ type Token = String
 data User = User
   { email :: String
   , name :: String
+  , aud :: String
   } deriving (Eq, Show, Generic)
-
 instance FromJSON User
 
 queryUser :: Token -> IO (Maybe User)
@@ -36,15 +36,18 @@ queryUser' token = do
   response <- simpleHttp (makeUrl token)
   return (decode response)
 
-isAuthenticated :: [String] -> MVar [Token] -> Token -> IO Bool
-isAuthenticated allowedUsers tokenCache token = runEitherT runner >>= return . fromEither
+isAuthenticated :: [String] -> [String] -> MVar [Token] -> Token -> IO Bool
+isAuthenticated clientIds allowedUsers tokenCache token = runEitherT runner >>= return . fromEither
     where runner :: EitherT Bool IO Bool
           runner = do
             ts <- lift $ readMVar tokenCache
             _ <- leftIf (token `elem` ts) True
             user <- lift $ queryUser token
             email' <- return $ fromMaybe "" (user >>= return . email)
+            aud' <- return $ fromMaybe "" (user >>= return . aud)
+            liftIO $ putStrLn $ "Trying to authenticate user: " ++ show user
             _ <- leftIf (not (email' `elem` allowedUsers)) False
+            _ <- leftIf (not (aud' `elem` clientIds)) False
             tokens <- lift $ takeMVar tokenCache
             lift $ putMVar tokenCache (token:tokens)
             return True

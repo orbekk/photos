@@ -32,6 +32,7 @@ defineFlag "host" ("*6" :: String) "Host to serve on (*6 for ipv6 mode)"
 defineFlag "pending_path" ("" :: String) "Path to pending albums"
 defineFlag "photos_path" ("" :: String) "Path to permanent albums"
 defineFlag "allowed_users" ("" :: String) "Comma separated list of emails"
+defineFlag "client_ids" ("" :: String) "Comma separated list of client ids"
 $(return [])  -- Somehow forces the flags to be set.
 
 instance ToJSON Album
@@ -56,8 +57,9 @@ type PhotoApi =
 
 type Token = String
 
-isAuthenticated = Authentication.isAuthenticated users cache
-    where users = splitOn "," flags_allowed_users
+isAuthenticated = Authentication.isAuthenticated clientIds users cache
+    where clientIds = splitOn "," flags_client_ids
+          users = splitOn "," flags_allowed_users
           cache = unsafePerformIO (newMVar [])
 
 config = Config
