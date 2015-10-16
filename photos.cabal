@@ -1,13 +1,13 @@
 name:                photos
 version:             0.1.0.0
-synopsis:            Simple project template from stack
+synopsis:            Photo organizer
 description:         Please see README.md
-homepage:            http://github.com/githubuser/photos#readme
-license:             BSD3
+homepage:            http://github.com/orbekk/photos#readme
+license:             Apache
 license-file:        LICENSE
-author:              Example Author Name
-maintainer:          example@example.com
-copyright:           2010 Author Here
+author:              Kjetil Ørbekk
+maintainer:          kjetil.orbekk@gmail.com
+copyright:           2016 Kjetil Ørbekk
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
