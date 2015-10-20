@@ -30,8 +30,9 @@ getAlbums :: Config -> IO [Album]
 getAlbums config = do
   pending <- getDirectoryFiles (pendingPath config)
   permanent <- getDirectoryFiles (photosPath config)
-  return ([Album name True | name <- sort pending, validAlbumName name] ++
-          [Album name False | name <- sort permanent, validAlbumName name])
+  return ([Album name True | name <- sort' pending, validAlbumName name] ++
+          [Album name False | name <- sort' permanent, validAlbumName name])
+    where sort' = reverse . sort
 
 albumDirectory :: Config -> Album -> FilePath
 albumDirectory config album
