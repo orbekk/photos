@@ -54,13 +54,16 @@ type PhotoApi =
            :> AuthenticationHeader
            :> ReqBody '[JSON] RenameRequest
            :> Post '[JSON] (Either RenameError ())
+  :<|> "quit" :> Get '[JSON] ()
 
 type Token = String
+
+{-# NOINLINE cache #-}
+cache = unsafePerformIO (newMVar [])
 
 isAuthenticated = Authentication.isAuthenticated clientIds users cache
     where clientIds = splitOn "," flags_client_ids
           users = splitOn "," flags_allowed_users
-          cache = unsafePerformIO (newMVar [])
 
 config = Config
   { pendingPath = flags_pending_path
@@ -68,19 +71,22 @@ config = Config
   }
 
 checkAuthenticated :: Maybe Token -> EitherT ServantErr IO ()
-checkAuthenticated (Just token) = liftIO (isAuthenticated token) >>= \case
-  True  -> return ()
-  False -> left err503 { errBody = "Not authenticated" }
+checkAuthenticated (Just token) = do
+  authenticated <- liftIO (isAuthenticated token)
+  unless authenticated $ left err503 { errBody = "Not authenticated" }
 checkAuthenticated Nothing = left err503 { errBody = "Missing token" }
 
 server :: Server PhotoApi
 server = albums
     :<|> rename
+    :<|> quit
   where albums token = checkAuthenticated token >> liftIO (getAlbums config)
 
         rename token (RenameRequest from to) = do
           _ <- checkAuthenticated token
           liftIO $ runEitherT (renameAlbum config from to)
+
+        quit = liftIO exitFailure
 
 photoApi :: Proxy PhotoApi
 photoApi = Proxy
